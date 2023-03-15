@@ -105,16 +105,11 @@ internal class TidalClient
 
             if (sw.Elapsed.TotalSeconds >= 5)
             {
-                break;
+                throw new Exception("Could not find TIDAL remote debugging target");
             }
         }
 
         sw.Stop();
-
-        if (DevToolsProtocol.Target == null)
-        {
-            throw new Exception("Could not find TIDAL remote debugging target");
-        }
 
         Console.WriteLine($"Started remote debugger on port {port}");
     }
