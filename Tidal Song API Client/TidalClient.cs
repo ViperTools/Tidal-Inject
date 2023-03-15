@@ -4,7 +4,8 @@ using System.Runtime.InteropServices;
 
 internal class TidalClient
 {
-    Process process;
+    public Process Process;
+    public DevToolsProtocol DevToolsProtocol;
 
     private static string? findAppDataTidal()
     {
@@ -36,14 +37,13 @@ internal class TidalClient
 
     private static string? findTidal()
     {
-        // Add Microsoft Store app, Add MacOS
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             return findAppDataTidal() ?? findMicrosoftStoreTidal();
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            return "/Applications/TIDAL";
+            return "/Applications/TIDAL.app/Contents/MacOS/TIDAL";
         }
 
         return null;
@@ -59,10 +59,6 @@ internal class TidalClient
         }
     }
 
-    [DllImport("kernel32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    static extern bool AllocConsole();
-
     public TidalClient()
     {
         closeTidal();
@@ -73,7 +69,7 @@ internal class TidalClient
             throw new Exception("Could not find TIDAL");
         }
 
-        process = new Process
+        Process = new Process
         {
             StartInfo =
             {
@@ -88,12 +84,24 @@ internal class TidalClient
             }
         };
 
-        process.ErrorDataReceived += (sender, args) => Debug.WriteLine("OUTPUT: " + args.Data);
+        Process.Start();
+        Process.StandardError.ReadLine(); // Skip empty line
 
-        process.Start();
+        int port;
+        
+        if (!int.TryParse(Process.StandardError.ReadLine()?.Substring(37, 5), out port))
+        {
+            throw new Exception("Could not get TIDAL remote debugging port");
+        }
 
-        process.BeginErrorReadLine();
+        DevToolsProtocol = new(port);
+        DevToolsProtocol.Target = DevToolsProtocol.GetTargets()?.FirstOrDefault(e => e.Title == "Home – TIDAL" || e.Title == "TIDAL");
 
-        process.WaitForExit();
+        if (DevToolsProtocol.Target == null)
+        {
+            throw new Exception("Could not find TIDAL remote debugging target");
+        }
+
+        Console.WriteLine($"Started remote debugger on port {port}");
     }
 }
