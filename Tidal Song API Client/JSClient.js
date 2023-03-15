@@ -61,8 +61,8 @@ player.addEventListener('mediastate', e => {
                 onNewSongPlayed()
                 trackId = newTrackId
             }
-            
-            onSongPlayed()
+
+            setTimeout(onSongPlayed, 500)
             break;
         }
         case 'paused': onSongPaused(); break;
