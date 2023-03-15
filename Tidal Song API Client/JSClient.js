@@ -8,9 +8,8 @@ function getElements() {
         elements.image = footer.querySelector('[data-test=current-media-imagery] img')
         elements.title = footer.querySelector('[data-test=footer-track-title] a')
         elements.artist = footer.querySelector('.artist-link')
+        elements.playButton = footer.querySelector('div[class^=playbackButton] button')
     }
-
-    elements.playButton = document.getElementById('playbackControlBar').querySelector('div[class^=playbackButton] button')
 
     return !Object.values(elements).includes(null)
 }
