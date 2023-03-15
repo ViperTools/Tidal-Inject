@@ -95,7 +95,19 @@ internal class TidalClient
         }
 
         DevToolsProtocol = new(port);
-        DevToolsProtocol.Target = DevToolsProtocol.GetTargets()?.FirstOrDefault(e => e.Title == "Home – TIDAL" || e.Title == "TIDAL");
+
+        Stopwatch sw = new Stopwatch();
+        sw.Start();
+
+        while (DevToolsProtocol.Target == null)
+        {
+            DevToolsProtocol.Target = DevToolsProtocol.GetTargets()?.FirstOrDefault(e => e.Title == "Home – TIDAL" || e.Title == "TIDAL");
+
+            if (sw.Elapsed.TotalSeconds >= 5)
+            {
+                break;
+            }
+        }
 
         if (DevToolsProtocol.Target == null)
         {
