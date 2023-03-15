@@ -1,5 +1,4 @@
 ﻿using Microsoft.Ajax.Utilities;
-using System.Net.Http.Headers;
 using System.Text;
 
 string apiUrl = "https://tidal.viper.tools";

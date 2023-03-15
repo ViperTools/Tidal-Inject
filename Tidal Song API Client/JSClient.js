@@ -1,84 +1,65 @@
-function getSongData() {
+const state = { paused: true, trackId: null }
+const elements = {}
+
+function getElements() {
     const footer = document.getElementById('footerPlayer')
-    const imageUrl = footer.querySelector('[data-test=current-media-imagery] img').src
-    
-    const titleLink = footer.querySelector('[data-test=footer-track-title] a')
-    const trackId = titleLink.href.split('/').pop()
-    const title = titleLink.textContent
 
-    // Artists
-    const artistChildren = footer.querySelector('.artist-link').children
-    const artists = []
-
-    for (const artist of artistChildren) {
-        artists.push(artist.textContent)
+    if (footer) {
+        elements.image = footer.querySelector('[data-test=current-media-imagery] img')
+        elements.title = footer.querySelector('[data-test=footer-track-title] a')
+        elements.artist = footer.querySelector('.artist-link')
     }
 
+    elements.playButton = document.getElementById('playbackControlBar').querySelector('div[class^=playbackButton] button')
+
+    return !Object.values(elements).includes(null)
+}
+
+function getSongData() {
+    const { image, title, artist } = elements
+    const artists = Array.from(artist.children, e => e.innerText)
+    const trackId = title.href.split('/').pop()
+
     return {
-        imageUrl,
-        trackId,
-        title,
         artists,
+        trackId,
+        imageUrl: image.src,
+        title: title.textContent,
         trackUrl: 'https://tidal.com/browse/track/' + trackId,
         artistsString: artists.join(', ')
     }
 }
 
-function sendState(state) {
+function sendState() {
     const xhr = new XMLHttpRequest()
     xhr.open('POST', 'C#_API_URL/status')
     xhr.setRequestHeader('Content-Type', 'application/json')
     xhr.setRequestHeader('Authorization', 'C#_AUTHORIZATION_TOKEN')
     xhr.send(JSON.stringify({
-        state: state,
+        state: state.paused ? 'pause' : 'play',
         songData: getSongData()
     }))
 }
 
-function onSongPlayed() {
-    sendState('play')
-}
-
-function onSongPaused() {
-    sendState('pause')
-}
-
-function onNewSongPlayed() {}
-function onSongStopped() {}
-function onSongCompleted() { }
-
-function init() {
-    if (!document.getElementById('footerPlayer')) {
-        setTimeout(init, 500)
+// Loop check status (used to use NativePlayerComponent but it doesn't seem to work on MacOS)
+function update() {
+    // Wait for stuff to load
+    if (!getElements()) {
+        setTimeout(update, 500)
         return;
     }
 
-    const player = NativePlayerComponent.Player()
-    let { trackId } = getSongData()
+    // Handle status
+    const { trackId } = getSongData()
+    const paused = elements.playButton.getAttribute('aria-label') == 'Play'
 
-    player.addEventListener('mediastate', e => {
-        const state = e.target
+    if (paused != state.paused || trackId != state.trackId) {
+        state.paused = paused
+        state.trackId = trackId
+        sendState()
+    }
 
-        switch (state) {
-            case 'active': {
-                let newTrackId = getSongData().trackId
-
-                if (trackId != newTrackId) {
-                    onNewSongPlayed()
-                    trackId = newTrackId
-                }
-
-                setTimeout(onSongPlayed, 500)
-                break;
-            }
-            case 'paused': onSongPaused(); break;
-            case 'stopped': onSongStopped(); break;
-            case 'completed': onSongCompleted(); break;
-        }
-    })
-
-    // Send initial status
-    onSongPaused()
+    setTimeout(update, 100)
 }
 
-init()
+update()

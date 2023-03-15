@@ -109,6 +109,8 @@ internal class TidalClient
             }
         }
 
+        sw.Stop();
+
         if (DevToolsProtocol.Target == null)
         {
             throw new Exception("Could not find TIDAL remote debugging target");
