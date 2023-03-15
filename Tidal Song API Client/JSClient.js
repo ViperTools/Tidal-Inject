@@ -45,31 +45,40 @@ function onSongPaused() {
 
 function onNewSongPlayed() {}
 function onSongStopped() {}
-function onSongCompleted() {}
+function onSongCompleted() { }
 
-const player = NativePlayerComponent.Player()
-let { trackId } = getSongData()
-
-player.addEventListener('mediastate', e => {
-    const state = e.target
-
-    switch (state) {
-        case 'active': {
-            let newTrackId = getSongData().trackId
-
-            if (trackId != newTrackId) {
-                onNewSongPlayed()
-                trackId = newTrackId
-            }
-
-            setTimeout(onSongPlayed, 500)
-            break;
-        }
-        case 'paused': onSongPaused(); break;
-        case 'stopped': onSongStopped(); break;
-        case 'completed': onSongCompleted(); break;
+function init() {
+    if (!document.getElementById('footerPlayer')) {
+        setTimeout(init, 500)
+        return;
     }
-})
 
-// Send initial status
-onSongPaused()
+    const player = NativePlayerComponent.Player()
+    let { trackId } = getSongData()
+
+    player.addEventListener('mediastate', e => {
+        const state = e.target
+
+        switch (state) {
+            case 'active': {
+                let newTrackId = getSongData().trackId
+
+                if (trackId != newTrackId) {
+                    onNewSongPlayed()
+                    trackId = newTrackId
+                }
+
+                setTimeout(onSongPlayed, 500)
+                break;
+            }
+            case 'paused': onSongPaused(); break;
+            case 'stopped': onSongStopped(); break;
+            case 'completed': onSongCompleted(); break;
+        }
+    })
+
+    // Send initial status
+    onSongPaused()
+}
+
+init()
