@@ -11,7 +11,7 @@ function getElements() {
         elements.playButton = footer.querySelector('div[class^=playbackButton] button')
     }
 
-    return !Object.values(elements).includes(null)
+    return footer && !Object.values(elements).includes(null)
 }
 
 function getSongData() {
