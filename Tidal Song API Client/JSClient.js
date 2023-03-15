@@ -30,15 +30,21 @@ function getSongData() {
     }
 }
 
-function sendState() {
+function sendState(end) {
     const xhr = new XMLHttpRequest()
     xhr.open('POST', 'C#_API_URL/status')
     xhr.setRequestHeader('Content-Type', 'application/json')
     xhr.setRequestHeader('Authorization', 'C#_AUTHORIZATION_TOKEN')
-    xhr.send(JSON.stringify({
-        state: state.paused ? 'pause' : 'play',
-        songData: getSongData()
-    }))
+
+    if (!end) {
+        xhr.send(JSON.stringify({
+            state: state.paused ? 'pause' : 'play',
+            songData: getSongData()
+        }))
+    }
+    else {
+        xhr.send('null')
+    }
 }
 
 // Loop check status (used to use NativePlayerComponent but it doesn't seem to work on MacOS)
@@ -63,3 +69,7 @@ function update() {
 }
 
 update()
+
+window.addEventListener('beforeunload', () => {
+    sendState(true)
+});
