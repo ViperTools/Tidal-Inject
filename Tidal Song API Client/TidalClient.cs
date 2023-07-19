@@ -1,11 +1,12 @@
 ﻿using Microsoft.Win32;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 
 internal class TidalClient
 {
     public Process Process;
-    public DevToolsProtocol DevToolsProtocol;
+    public DevToolsProtocol ClientProtocol, NodeProtocol;
 
     private static string? findAppDataTidal()
     {
@@ -59,6 +60,38 @@ internal class TidalClient
         }
     }
 
+    int ReadPort()
+    {
+        string? url = Process.StandardError.ReadLine();
+
+        if (url != null && int.TryParse(Regex.Match(url, @":(\d+)").Groups[1].Value, out int port))
+        {
+            return port;
+        }
+
+        return 0;
+    }
+
+    bool InitProtocol(DevToolsProtocol protocol)
+    {
+        Stopwatch sw = new Stopwatch();
+        sw.Start();
+
+        while (protocol.Target == null)
+        {
+            protocol.Target = protocol.GetTargets()?.FirstOrDefault(e => !e.Title.Contains("Service"));
+
+            if (sw.Elapsed.TotalSeconds >= 5)
+            {
+                return false;
+            }
+        }
+
+        sw.Stop();
+
+        return true;
+    }
+
     public TidalClient()
     {
         closeTidal();
@@ -75,7 +108,7 @@ internal class TidalClient
             {
                 FileName = path,
                 UseShellExecute = false,
-                Arguments = "--remote-debugging-port",
+                Arguments = "--remote-debugging-port --inspect",
                 EnvironmentVariables =
                 {
                     { "ELECTRON_NO_ATTACH_CONSOLE", "true" }
@@ -85,32 +118,38 @@ internal class TidalClient
         };
 
         Process.Start();
-        Process.StandardError.ReadLine(); // Skip empty line
+        int nodePort = ReadPort();
 
-        int port;
-        
-        if (!int.TryParse(Process.StandardError.ReadLine()?.Substring(37, 5), out port))
+        if (nodePort == 0)
+        {
+            throw new Exception("Could not get Node debugging port");
+        }
+
+        Process.StandardError.ReadLine();
+        Process.StandardError.ReadLine();
+
+        int clientPort = ReadPort();
+
+        if (clientPort == 0)
         {
             throw new Exception("Could not get TIDAL remote debugging port");
         }
 
-        DevToolsProtocol = new(port);
+        NodeProtocol = new(nodePort);
 
-        Stopwatch sw = new Stopwatch();
-        sw.Start();
-
-        while (DevToolsProtocol.Target == null)
+        if (!InitProtocol(NodeProtocol))
         {
-            DevToolsProtocol.Target = DevToolsProtocol.GetTargets()?.FirstOrDefault(e => e.Title == "Home – TIDAL" || e.Title == "TIDAL");
-
-            if (sw.Elapsed.TotalSeconds >= 5)
-            {
-                throw new Exception("Could not find TIDAL remote debugging target");
-            }
+            throw new Exception("Could not find node remote debugging target");
         }
 
-        sw.Stop();
+        ClientProtocol = new(clientPort);
+        
+        if (!InitProtocol(ClientProtocol))
+        {
+            throw new Exception("Could not find TIDAL remote debugging target");
+        }
 
-        Console.WriteLine($"Started remote debugger on port {port}");
+        Console.WriteLine($"Started Node debugger on port {nodePort}");
+        Console.WriteLine($"Started remote debugger on port {clientPort}");
     }
 }

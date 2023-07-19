@@ -94,14 +94,14 @@ internal class DevToolsProtocol
         return response.Content.ReadFromJsonAsync<WebSocketTarget[]>().Result;
     }
 
-    public JsonResponse? SendRequest(JsonRequest request)
+    public JsonResponse? SendRequest(string request)
     {
         if (target == null || socket == null)
         {
             throw new Exception("No target has been set");
         }
 
-        socket.Send(JsonSerializer.Serialize(request));
+        socket.Send(request);
 
         while (lastResponse == null)
         {
@@ -114,6 +114,11 @@ internal class DevToolsProtocol
         lastResponse = null;
 
         return res;
+    }
+
+    public JsonResponse? SendRequest(JsonRequest request)
+    {
+        return SendRequest(JsonSerializer.Serialize(request));
     }
 
     protected virtual void OnMessageReceived(MessageEventArgs e)

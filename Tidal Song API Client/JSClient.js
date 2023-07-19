@@ -1,5 +1,7 @@
 const state = { paused: true, trackId: null }
 const elements = {}
+const textEncoder = new TextEncoder()
+let serialPort
 
 function getElements() {
     const footer = document.getElementById('footerPlayer')
@@ -9,6 +11,8 @@ function getElements() {
         elements.title = footer.querySelector('[data-test=footer-track-title] a')
         elements.artist = footer.querySelector('.artist-link')
         elements.playButton = footer.querySelector('div[class^=playbackButton] button')
+        elements.nextButton = footer.querySelector('[data-test=next]')
+        elements.previousButton = footer.querySelector('[data-test=previous]')
     }
 
     return footer && !Object.values(elements).includes(null)
@@ -36,10 +40,18 @@ function sendState(end) {
     xhr.setRequestHeader('Authorization', 'C#_AUTHORIZATION_TOKEN')
 
     if (!end) {
+        const songData = getSongData()
+
         xhr.send(JSON.stringify({
             state: state.paused ? 'pause' : 'play',
-            songData: getSongData()
+            songData
         }))
+
+        if (serialPort) {
+            const writer = serialPort.writable.getWriter()
+            writer.write(textEncoder.encode(`${songData.title}\n${songData.artistsString}\n`))
+            writer.releaseLock()
+        }
     }
     else {
         xhr.send('null')
@@ -72,3 +84,68 @@ update()
 window.addEventListener('beforeunload', () => {
     sendState(true)
 });
+
+// Arduino Integration
+
+const player = NativePlayerComponent.Player()
+
+function handleCommand(data) {
+    const [ command, value ] = data.split(' ')
+
+    switch (command.trim()) {
+        case 'SET_VOLUME': {
+            player.setVolume(Number(value))
+
+            break
+        }
+        case 'PAUSE_SONG': {
+            if (state.paused) {
+                player.play()
+            }
+            else {
+                player.pause()
+            }
+
+            break
+        }
+        case 'NEXT_SONG': {
+            elements.nextButton.click()
+
+            break
+        }
+        case 'PREVIOUS_SONG': {
+            elements.previousButton.click()
+
+            break
+        }
+    }
+}
+
+var serialData = ''
+
+navigator.serial.requestPort({ filters: [{ usbVendorId: 0x2341 }] }).then(async port => {
+    await port.open({ baudRate: 115200 })
+    serialPort = port
+
+    while (port.readable) {
+        const reader = port.readable.getReader();
+
+        while (true) {
+            const { value, done } = await reader.read();
+
+            if (done) {
+                reader.releaseLock();
+                break;
+            }
+
+            if (value) {
+                serialData += String.fromCharCode(...value)
+
+                if (serialData.endsWith('\n')) {
+                    handleCommand(serialData.substring(0, serialData.length - 1))
+                    serialData = ''
+                }
+            }
+        }
+    }
+}).catch(console.log)
