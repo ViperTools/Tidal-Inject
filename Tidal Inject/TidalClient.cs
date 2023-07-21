@@ -1,14 +1,15 @@
-﻿using Microsoft.Win32;
+﻿namespace TidalInject;
+using Microsoft.Win32;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
-internal class TidalClient
+public class TidalClient
 {
     public Process Process;
     public DevToolsProtocol ClientProtocol, NodeProtocol;
 
-    private static string? findAppDataTidal()
+    private static string? FindAppDataTidal()
     {
         string tidalAppData = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TIDAL");
 
@@ -22,7 +23,7 @@ internal class TidalClient
         return appDirectory != null ? Path.Join(appDirectory, "TIDAL.exe") : null;
     }
 
-    private static string? findMicrosoftStoreTidal()
+    private static string? FindMicrosoftStoreTidal()
     {
         RegistryKey? key = Registry.ClassesRoot.OpenSubKey("Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\PackageRepository\\Extensions\\windows.protocol\\tidal");
         string? subkey = key?.GetSubKeyNames().FirstOrDefault();
@@ -36,11 +37,11 @@ internal class TidalClient
         return null;
     }
 
-    private static string? findTidal()
+    private static string? FindTidal()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            return findAppDataTidal() ?? findMicrosoftStoreTidal();
+            return FindAppDataTidal() ?? FindMicrosoftStoreTidal();
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
@@ -50,7 +51,7 @@ internal class TidalClient
         return null;
     }
 
-    private static void closeTidal()
+    private static void CloseTidal()
     {
         Process[] processes = Process.GetProcessesByName("TIDAL");
 
@@ -60,7 +61,7 @@ internal class TidalClient
         }
     }
 
-    int ReadPort()
+    private int ReadPort()
     {
         string? url = Process.StandardError.ReadLine();
 
@@ -72,7 +73,7 @@ internal class TidalClient
         return 0;
     }
 
-    bool InitProtocol(DevToolsProtocol protocol)
+    private static bool InitProtocol(DevToolsProtocol protocol)
     {
         Stopwatch sw = new Stopwatch();
         sw.Start();
@@ -94,8 +95,8 @@ internal class TidalClient
 
     public TidalClient()
     {
-        closeTidal();
-        string? path = findTidal();
+        CloseTidal();
+        string? path = FindTidal();
 
         if (path == null)
         {

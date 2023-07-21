@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33403.182
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tidal Song API Client", "Tidal Song API Client\Tidal Song API Client.csproj", "{E3F1CEF6-8E5E-4001-AB5F-29106B89083C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tidal Inject", "Tidal Inject\Tidal Inject.csproj", "{E3F1CEF6-8E5E-4001-AB5F-29106B89083C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

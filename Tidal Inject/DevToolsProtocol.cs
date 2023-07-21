@@ -1,9 +1,10 @@
-﻿using System.Net.Http.Json;
+﻿namespace TidalInject;
+using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using WebSocketSharp;
 
-class WebSocketTarget
+public class WebSocketTarget
 {
     [JsonPropertyName("description")]
     public string Description { get; set; }
@@ -27,7 +28,7 @@ class WebSocketTarget
     public string WebSocketDebuggerUrl { get; set; }
 }
 
-class JsonResponse {
+public class JsonResponse {
     [JsonPropertyName("id")]
     public int Id { get; set; }
 
@@ -35,7 +36,7 @@ class JsonResponse {
     public JsonElement Result { get; set; }
 }
 
-class JsonRequest
+public class JsonRequest
 {
     [JsonPropertyName("id")]
     public int Id { get; set; } = 1;
@@ -47,12 +48,12 @@ class JsonRequest
     public Dictionary<string, string> Params { get; set; } 
 }
 
-class MessageReceivedEventArgs : EventArgs
+public class MessageReceivedEventArgs : EventArgs
 {
     public string Data;
 }
 
-internal class DevToolsProtocol
+public class DevToolsProtocol
 {
     public event EventHandler<MessageEventArgs> MessageReceived;
 
